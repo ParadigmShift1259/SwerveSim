@@ -1,0 +1,464 @@
+﻿<Window x:Class="SwerveSim.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SwerveSim"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="Swerve Drive Vector Addition" Height="514.894" Width="701.064"
+        VisualBitmapScalingMode="HighQuality">
+
+    <Window.Resources>
+        <system:Double x:Key="wheelRadius">8.0</system:Double>
+        <system:Double x:Key="wheelDiameter">16.0</system:Double>
+        <system:Double x:Key="wheelWidth">6.0</system:Double>
+        <system:Double x:Key="wheelHalfWidth">3.0</system:Double>
+
+        <!--0,0, 20,0, 19,-1, 19,1, 20,0-->
+        <PointCollection x:Key="translationVectorArrowPoints">
+            <Point X="0" Y="0" />
+            <Point X="20" Y="0" />
+            <Point X="19" Y="-1" />
+            <Point X="19" Y="1" />
+            <Point X="20" Y="0" />
+        </PointCollection>
+
+        <PointCollection x:Key="rotationVectorArrowPoints">
+            <Point X="0" Y="0" />
+            <Point X="20" Y="0" />
+            <Point X="19" Y="-1" />
+            <Point X="19" Y="1" />
+            <Point X="20" Y="0" />
+        </PointCollection>
+
+        <system:Double x:Key="translationXcoordNW">14.142</system:Double>
+        <system:Double x:Key="translationYcoordNW">-14.142</system:Double>
+
+        <system:Double x:Key="translationXcoordSW">-14.142</system:Double>
+        <system:Double x:Key="translationYcoordSW">-14.142</system:Double>
+
+        <system:Double x:Key="translationXcoordNE">14.142</system:Double>
+        <system:Double x:Key="translationYcoordNE">14.142</system:Double>
+
+        <system:Double x:Key="translationXcoordSE">-14.142</system:Double>
+        <system:Double x:Key="translationYcoordSE">14.142</system:Double>
+
+        <PointCollection x:Key="finalVectorArrowPointsNW" />
+        <PointCollection x:Key="finalVectorArrowPointsSW" />
+        <PointCollection x:Key="finalVectorArrowPointsNE" />
+        <PointCollection x:Key="finalVectorArrowPointsSE" />
+
+        <system:Double x:Key="finalAngleNW" />
+        <system:Double x:Key="finalAngleSW" />
+        <system:Double x:Key="finalAngleNE" />
+        <system:Double x:Key="finalAngleSE" />
+
+        <system:Double x:Key="finalSpeedNW" />
+        <system:Double x:Key="finalSpeedSW" />
+        <system:Double x:Key="finalSpeedNE" />
+        <system:Double x:Key="finalSpeedSE" />
+
+        <system:Double x:Key="canvasSize">130</system:Double>
+
+        <system:Double x:Key="lineLeftW">30</system:Double>
+        <system:Double x:Key="lineTopN">40</system:Double>
+        <system:Double x:Key="lineLeftE">90</system:Double>
+        <system:Double x:Key="lineTopS">80</system:Double>
+
+        <system:Double x:Key="wheelLeftW">22</system:Double> <!-- left - wheel half hgt? -->
+        <system:Double x:Key="wheelTopN">37</system:Double>  <!-- top - wheel half wid? -->
+        <system:Double x:Key="wheelLeftE">82</system:Double>
+        <system:Double x:Key="wheelTopS">77</system:Double>
+
+        <system:Double x:Key="canvasFontSize">10</system:Double>
+        <system:Double x:Key="finalFontSize">10</system:Double>
+
+        <Style x:Key="cnvsSize" TargetType="Canvas">
+            <Setter Property="Height" Value="{DynamicResource canvasSize}" />
+            <Setter Property="Width" Value="{DynamicResource canvasSize}" />
+        </Style>
+
+        <Style x:Key="polyNW" TargetType="Polyline">
+            <Setter Property="Canvas.Left" Value="{DynamicResource lineLeftW}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource lineTopN}" />
+        </Style>
+        <Style x:Key="polySW" TargetType="Polyline">
+            <Setter Property="Canvas.Left" Value="{DynamicResource lineLeftW}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource lineTopS}" />
+        </Style>
+        <Style x:Key="polyNE" TargetType="Polyline">
+            <Setter Property="Canvas.Left" Value="{DynamicResource lineLeftE}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource lineTopN}" />
+        </Style>
+        <Style x:Key="polySE" TargetType="Polyline">
+            <Setter Property="Canvas.Left" Value="{DynamicResource lineLeftE}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource lineTopS}" />
+        </Style>
+
+        <Style x:Key="wheelNW" TargetType="Rectangle">
+            <Setter Property="Canvas.Left" Value="{DynamicResource wheelLeftW}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource wheelTopN}" />
+        </Style>
+        <Style x:Key="wheelSW" TargetType="Rectangle">
+            <Setter Property="Canvas.Left" Value="{DynamicResource wheelLeftW}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource wheelTopS}" />
+        </Style>
+        <Style x:Key="wheelNE" TargetType="Rectangle">
+            <Setter Property="Canvas.Left" Value="{DynamicResource wheelLeftE}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource wheelTopN}" />
+        </Style>
+        <Style x:Key="wheelSE" TargetType="Rectangle">
+            <Setter Property="Canvas.Left" Value="{DynamicResource wheelLeftE}" />
+            <Setter Property="Canvas.Top" Value="{DynamicResource wheelTopS}" />
+        </Style>
+
+        <local:DoubleConverter x:Key="doubleConv" />
+        <local:Minus90Converter x:Key="minus90conv" />
+        <local:Plus180Converter x:Key="plus180conv" />
+        <local:NegateConverter x:Key="negateConv" />
+        <!--<local:RotationConverter x:Key="rotationConv" />-->
+    </Window.Resources>
+
+    <Grid ShowGridLines="True">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="200" />
+            <RowDefinition Height="130"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.Column="0">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Height="{Binding ElementName=txtTranslationAngle, Path=ActualHeight}" VerticalContentAlignment="Center" Margin="0,-1,0,1">Translation angle</Label>
+                    <TextBox Name="txtTranslationAngle" Text="{Binding ElementName=sldrTranslationAngle, Path=Value}" Width="30" VerticalContentAlignment="Center"/>
+                    <Label>&#x00B0;</Label>
+                </StackPanel>
+                <Slider Name="sldrTranslationAngle" ValueChanged="ValueChanged_sldrTranslationAngle" Value="-30" Minimum="-180" Maximum="180" />
+                <StackPanel Orientation="Horizontal">
+                    <Label Height="{Binding ElementName=txtTranslationAngle, Path=ActualHeight}" VerticalContentAlignment="Center" Margin="0,-1,0,1">Translation speed</Label>
+                    <TextBox Name="txtTranslationSpeed" Text="{Binding ElementName=sldrTranslationSpeed, Path=Value}" Width="30" VerticalContentAlignment="Center"/>
+                    <Label>m/s</Label>
+                </StackPanel>
+                <Slider Name="sldrTranslationSpeed" ValueChanged="ValueChanged_sldrTranslationSpeed" Value="6" Minimum="0" Maximum="7" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Grid.Column="1">
+            <StackPanel Orientation="Horizontal">
+                <Label Height="{Binding ElementName=txtRotationAngle, Path=ActualHeight}" VerticalContentAlignment="Center" Margin="0,-1,0,1">Rotation angle</Label>
+                <!--<TextBox Name="txtRotationAngle" Text="{Binding ElementName=sldrRotationAngle, Path=Value}" Width="30" VerticalContentAlignment="Center"/>-->
+                <TextBox Name="txtRotationAngle" Text="-45" Width="30" VerticalContentAlignment="Center"/>
+                <Label>&#x00B0;</Label>
+            </StackPanel>
+            <!--<Slider Name="sldrRotationAngle" Value="-45" Minimum="-180" Maximum="180" />-->
+            <StackPanel Orientation="Horizontal">
+                <Label Height="{Binding ElementName=txtTranslationAngle, Path=ActualHeight}" VerticalContentAlignment="Center" Margin="0,-1,0,1">Rotation speed</Label>
+                <TextBox Name="txtRotationSpeed" Text="{Binding ElementName=sldrRotationSpeed, Path=Value}" Width="30" VerticalContentAlignment="Center"/>
+                <Label>radians/s</Label>
+            </StackPanel>
+            <Slider Name="sldrRotationSpeed" ValueChanged="ValueChanged_sldrRotationSpeed" Value="6.283185307179586476925286766559" Minimum="0" Maximum="6.283185307179586476925286766559" />
+            <StackPanel>
+                <RadioButton Content="Clockwise" IsChecked="True" Click="RadioButtonClockwise_Click"/>
+                <RadioButton Content="Counter-clockwise" Click="RadioButtonCounterClockwise_Click"/>
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Grid.Column="3">
+            <StackPanel Orientation="Horizontal">
+                <Label FontSize="{DynamicResource finalFontSize}" Width="60" Height="40" VerticalContentAlignment="Center" Margin="0,-1,0,1">Angle</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalAngleNW}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}" Margin="0,0,20,0">&#x00B0;</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalAngleNE}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}">&#x00B0;</Label>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label FontSize="{DynamicResource finalFontSize}" Width="60" Height="40" VerticalContentAlignment="Center" Margin="0,-1,0,1">Speed</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalSpeedNW}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}" Margin="0,0,20,0">m/s</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalSpeedNE}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}">m/s</Label>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Label FontSize="{DynamicResource finalFontSize}" Width="60" Height="40" VerticalContentAlignment="Center" Margin="0,-1,0,1">Angle</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalAngleSW}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}" Margin="0,0,20,0">&#x00B0;</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalAngleSE}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}">&#x00B0;</Label>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label FontSize="{DynamicResource finalFontSize}" Width="60" Height="40" VerticalContentAlignment="Center" Margin="0,-1,0,1">Speed</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalSpeedSW}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}" Margin="0,0,20,0">m/s</Label>
+                <Label FontSize="{DynamicResource finalFontSize}" Content="{DynamicResource finalSpeedSE}" Width="40" Height="40" VerticalContentAlignment="Center"/>
+                <Label FontSize="{DynamicResource finalFontSize}">m/s</Label>
+            </StackPanel>
+        </StackPanel>
+
+        <Canvas Name="cnvsTranslation" Grid.Row="1" Grid.Column="0" Background="AliceBlue" Style="{StaticResource cnvsSize}">
+            <Label  HorizontalContentAlignment="Center" 
+                    VerticalContentAlignment="Center" 
+                    Height="{Binding ElementName=cnvsTranslation, Path=ActualHeight}" 
+                    Width="{Binding ElementName=cnvsTranslation, Path=ActualWidth}" 
+                    FontSize="{DynamicResource canvasFontSize}">Translation
+            </Label>
+
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+        </Canvas>
+
+        <Canvas Name="cnvsRotate" Grid.Row="1" Grid.Column="1" Background="AntiqueWhite" Style="{StaticResource cnvsSize}">
+            <Label  HorizontalContentAlignment="Center" 
+                    VerticalContentAlignment="Center" 
+                    Height="{Binding ElementName=cnvsRotate, Path=ActualHeight}" 
+                    Width="{Binding ElementName=cnvsRotate, Path=ActualWidth}" 
+                    FontSize="{DynamicResource canvasFontSize}">Rotation
+            </Label>
+
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource minus90conv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource minus90conv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource negateConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource negateConv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource plus180conv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource plus180conv}}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+        </Canvas>
+
+        <Canvas Name="cnvsVectorSum" Grid.Row="1" Grid.Column="2" Background="Cornsilk" Style="{StaticResource cnvsSize}">
+            <Label  HorizontalContentAlignment="Center" 
+                    VerticalContentAlignment="Center" 
+                    Height="{Binding ElementName=cnvsVectorSum, Path=ActualHeight}" 
+                    Width="{Binding ElementName=cnvsVectorSum, Path=ActualWidth}" 
+                    FontSize="{DynamicResource canvasFontSize}">Vector Sum
+            </Label>
+
+            <!--=============================================================================================================-->
+            <Polyline Name="vectorNW" Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                        <TranslateTransform X="{DynamicResource translationXcoordNW}" Y="{DynamicResource translationYcoordNW}"></TranslateTransform>
+                    </TransformGroup>
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                        <TranslateTransform X="{DynamicResource translationXcoordSW}" Y="{DynamicResource translationYcoordSW}"></TranslateTransform>
+                    </TransformGroup>
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                        <TranslateTransform X="{DynamicResource translationXcoordNE}" Y="{DynamicResource translationYcoordNE}"></TranslateTransform>
+                    </TransformGroup>
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource translationVectorArrowPoints}" Stroke="Blue" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtTranslationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                        <TranslateTransform X="{DynamicResource translationXcoordSE}" Y="{DynamicResource translationYcoordSE}"></TranslateTransform>
+                    </TransformGroup>
+                </Polyline.RenderTransform>
+            </Polyline>
+
+            <!--=============================================================================================================-->
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource doubleConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource minus90conv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource negateConv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Polyline Points="{DynamicResource rotationVectorArrowPoints}" Stroke="Red" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{Binding ElementName=txtRotationAngle, Path=Text, Converter={StaticResource plus180conv}}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+
+            <!--=============================================================================================================-->
+            <Polyline Points="{DynamicResource finalVectorArrowPointsNW}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleNW}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleNW}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsSW}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleSW}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleSW}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsNE}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleNE}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleNE}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsSE}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleSE}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleSE}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+        </Canvas>
+
+        <Canvas Name="cnvsFinalOutput" Grid.Row="1" Grid.Column="3" Background="LemonChiffon" Style="{StaticResource cnvsSize}">
+            <Label  HorizontalContentAlignment="Center" 
+                    VerticalContentAlignment="Center" 
+                    Height="{Binding ElementName=cnvsFinalOutput, Path=ActualHeight}" 
+                    Width="{Binding ElementName=cnvsFinalOutput, Path=ActualWidth}" 
+                    FontSize="{DynamicResource canvasFontSize}">Final Output
+            </Label>
+
+            <!--=============================================================================================================-->
+            <Polyline Points="{DynamicResource finalVectorArrowPointsNW}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polyNW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleNW}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleNW}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsSW}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polySW}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleSW}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSW}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleSW}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsNE}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polyNE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleNE}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelNE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleNE}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <Polyline Points="{DynamicResource finalVectorArrowPointsSE}" Stroke="Green" StrokeThickness="1" Style="{StaticResource polySE}">
+                <Polyline.RenderTransform>
+                    <RotateTransform CenterX="0" CenterY="0" Angle="{DynamicResource finalAngleSE}" />
+                </Polyline.RenderTransform>
+            </Polyline>
+            <Rectangle Width="{DynamicResource wheelDiameter}" Height="{DynamicResource wheelWidth}" Stroke="Black" StrokeThickness="1" Style="{StaticResource wheelSE}">
+                <Rectangle.RenderTransform>
+                    <RotateTransform CenterX="{DynamicResource wheelRadius}" CenterY="{DynamicResource wheelHalfWidth}" Angle="{DynamicResource finalAngleSE}" />
+                </Rectangle.RenderTransform>
+            </Rectangle>
+        </Canvas>
+    </Grid>
+
+</Window>
